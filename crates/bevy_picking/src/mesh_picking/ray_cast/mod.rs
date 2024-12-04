@@ -196,7 +196,6 @@ pub struct MeshRayCast<'w, 's> {
             Option<Read<Mesh2d>>,
             Option<Read<Mesh3d>>,
             Option<Read<SimplifiedMesh>>,
-            Has<RayCastBackfaces>,
             Read<GlobalTransform>,
         ),
         MeshFilter,
@@ -250,7 +249,7 @@ impl<'w, 's> MeshRayCast<'w, 's> {
             .filter(|(_, entity)| (settings.filter)(*entity))
             .for_each(|(aabb_near, entity)| {
                 // Get the mesh components and transform.
-                let Ok((mesh2d, mesh3d, simplified_mesh, has_backfaces, transform)) =
+                let Ok((mesh2d, mesh3d, simplified_mesh, transform)) =
                     self.mesh_query.get(*entity)
                 else {
                     return;
@@ -274,15 +273,10 @@ impl<'w, 's> MeshRayCast<'w, 's> {
                     return;
                 };
 
-                let backfaces = match has_backfaces {
-                    true => Backfaces::Include,
-                    false => Backfaces::Cull,
-                };
-
                 // Perform the actual ray cast.
                 let _ray_cast_guard = ray_cast_guard.enter();
                 let transform = transform.compute_matrix();
-                let intersection = ray_intersection_over_mesh(mesh, &transform, ray, backfaces);
+                let intersection = ray_intersection_over_mesh(mesh, &transform, ray, Backfaces::Include);
 
                 if let Some(intersection) = intersection {
                     let distance = FloatOrd(intersection.distance);
